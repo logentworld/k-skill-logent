@@ -16,11 +16,8 @@ if [[ -n "${LOGENT_CONTENT_SIGNING_KEY_FILE:-}" ]]; then
         public="$PWD/build/keys/content-public.der"
     fi
     python3 scripts/plugin-pack.py build \
+        --definition "$PWD/logent-plugin.json" --version "$version" \
         --aar "$dist/$name-v$version.aar" \
-        --id com.sleepysoong.logent.k-skill --name "k-skill" --version "$version" \
-        --entry com.sleepysoong.logent.kskill.KSkillPlugin \
-        --requires com.sleepysoong.logent.browser-use \
-        --api-min 4 --api-max 4 \
         --key "$LOGENT_CONTENT_SIGNING_KEY_FILE" --public-key "$public" \
         --output "$dist/$name-v$version.lpg"
     artifacts+=("$dist/$name-v$version.lpg")

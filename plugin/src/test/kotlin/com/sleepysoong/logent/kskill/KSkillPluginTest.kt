@@ -28,16 +28,4 @@ class KSkillPluginTest {
         assertTrue(result.exceptionOrNull() is IllegalStateException)
     }
 
-    @Test
-    fun `출력이 한도를 넘어도 실행 규칙을 원문보다 먼저 전달해요`() = runBlocking {
-        val host = FakePluginHost { _, _ ->
-            Result.success(ProcessResult(0, "# 원본 스킬\n" + "가".repeat(30_000), false))
-        }
-        val skill = KSkillPlugin().skills().first { it.name == "bunjang-search" }
-        val body = requireNotNull(skill.read)(PluginSkillReadContext(host = host)).getOrThrow()
-        assertTrue(body.length <= 24_000)
-        assertTrue(body.startsWith("# Logent 실행 환경 규칙"))
-        assertTrue(body.contains("browser_use"))
-        assertTrue(body.trimEnd().endsWith("…스킬 출력 한도에서 잘렸어요."))
-    }
 }

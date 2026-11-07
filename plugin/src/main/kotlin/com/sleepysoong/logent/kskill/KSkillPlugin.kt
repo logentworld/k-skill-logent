@@ -29,8 +29,9 @@ class KSkillPlugin : LogentPlugin {
     override fun skills(): List<PluginSkill> = remoteSkills
 
     override fun promptSection(): String =
-        "k-skill은 browser-use를 필수로 사용해요. 모든 스킬의 브라우저 작업은 정식 browser_use로 실행하고, " +
-            "skill read 본문의 Logent 실행 환경 규칙을 원문의 CLI-first·helper 필수 실행·완료 기준의 특정 실행기 요구보다 우선해요."
+        "k-skill은 browser-use와 computer-use를 필수로 사용해요. 브라우저 작업은 정식 browser_use로, " +
+            "픽셀·스크린샷 확인은 computer_use로 실행해요. skill read 본문의 Logent 실행 환경 규칙을 " +
+            "원문의 CLI-first·helper 필수 실행·완료 기준의 특정 실행기 요구보다 우선해요."
 
     private suspend fun readRemote(name: String, context: PluginSkillReadContext): Result<String> {
         if (context.path != null) {
@@ -103,7 +104,8 @@ class KSkillPlugin : LogentPlugin {
             # Logent 실행 환경 규칙
 
             이 규칙은 k-skill의 모든 스킬에 적용하며 아래 원문의 브라우저 실행 지시보다 우선해요.
-            - 브라우저 작업은 필수 의존 플러그인 com.sleepysoong.logent.browser-use의 정식 browser_use 도구로 실행해요. 런타임·사용자 세션·탭은 browser-use 한 곳에서 관리해요.
+            - 브라우저 작업은 필수 의존 플러그인 browser-use의 정식 browser_use 도구로 실행해요. 런타임·사용자 세션·탭은 browser-use 한 곳에서 관리해요.
+            - 픽셀·스크린샷 확인은 필수 의존 플러그인 computer-use의 computer_use screenshot을 써요. DOM 관찰·탐색·입력은 browser_use로 유지하고, 외부 Playwright 촬영 helper나 별도 브라우저로 대체하지 않아요.
             - 원문의 URL·검색 조건·데이터 의미·출력·승인 경계는 유지하되 CLI-first·helper 필수 실행·완료 기준의 특정 실행기 요구는 이 규칙으로 대체해요. 실제로 얻지 않은 CLI export·전수 결과를 만들었다고 보고하지 않아요.
             - 내부나 fallback에서 로컬·원격 브라우저를 쓰는 npx 명령·k-skill exec·Python helper·설치 점검 명령은 실행하지 않아요. 원격 Playwright 실행 서비스로 보내는 우회도 browser_use로 대체해요.
             - Playwright·Puppeteer·Selenium launch, 별도 CDP 클라이언트, BrowserOS·Aside·CloakBrowser는 사용하지 않아요. Playwright 설치나 플랫폼 위장으로 우회하지 않아요.

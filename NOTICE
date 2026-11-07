@@ -15,6 +15,12 @@
 - 플러그인 ID는 `com.sleepysoong.logent.k-skill`이며, 노출하는 스킬은 upstream 카탈로그와 같아요.
 - 플러그인 코드는 GPL-3.0이고 upstream 스킬 자산은 MIT 라이선스를 그대로 따라요.
 
+## 1.0.3
+
+- 공통 정의 파일 `logent-plugin.json`에 키 `sleepysoong:k_skill`과 두 필수 참조 `sleepysoong:browser_use`·`sleepysoong:computer_use`를 선언하고 서명 manifest의 `key`·`requires`로 전달해요.
+- Logent 0.0.84 이상과 API 4를 유지해요. 참조는 계정·조직·Android ID에서 추론하지 않으며 누락·비활성·충돌 시 소비자인 k-skill 기여를 제외해요. 자동 설치나 실행기 준비는 하지 않아요.
+- 패키징 CLI는 `--definition logent-plugin.json`을 사용해요. upstream 원문·라이선스·원본 경로는 유지해요.
+
 ## 1.0.2
 
 - `browser-use`를 서명 manifest의 필수 의존성으로 선언하고, 누락·비활성 상태에서는 코어가 k-skill 기여만 제외하도록 했어요.

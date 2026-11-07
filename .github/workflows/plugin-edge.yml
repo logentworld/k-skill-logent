@@ -161,6 +161,7 @@ jobs:
             gh release edit edge --prerelease --notes "커밋 ${COMMIT:0:7}의 .lpg예요. $note"
           fi
           while IFS= read -r old; do
+            if [[ "$old" =~ ^logent-k-skill-v[0-9]+\.[0-9]+\.[0-9]+\.lpg$ ]]; then continue; fi
             case "$old" in
               *.lpg|SHA256SUMS.edge|SHA256SUMS-edge-*.txt)
                 gh release delete-asset "$release" "$old" -y ;;

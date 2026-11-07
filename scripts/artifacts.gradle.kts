@@ -7,6 +7,7 @@ val contentSources = tasks.register<Zip>("pluginAssetSources") {
     from(layout.projectDirectory.dir("src/main/assets")) { into("assets") }
     from(repository.resolve("LICENSE"))
     from(repository.resolve("NOTICE"))
+    from(repository.resolve("logent-plugin.json"))
     archiveFileName.set("logent-k-skill-v${releaseVersion}-assets-source.zip")
     destinationDirectory.set(distribution)
     isPreserveFileTimestamps = false
