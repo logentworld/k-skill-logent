@@ -15,6 +15,13 @@
 - 플러그인 ID는 `com.sleepysoong.logent.k-skill`이며, 노출하는 스킬은 upstream 카탈로그와 같아요.
 - 플러그인 코드는 GPL-3.0이고 upstream 스킬 자산은 MIT 라이선스를 그대로 따라요.
 
+## 1.0.2
+
+- `browser-use`를 서명 manifest의 필수 의존성으로 선언하고, 누락·비활성 상태에서는 코어가 k-skill 기여만 제외하도록 했어요.
+- 모든 스킬 본문 앞에 Logent 실행 환경 규칙을 붙여 브라우저 작업을 정식 `browser_use`로 위임했어요. CLI-first·helper 필수 실행·로컬/원격 브라우저 fallback을 대체하며 HTTP 전용 조회와 원문의 승인 경계는 유지해요.
+- 원문 본문이 비었거나 읽기 프로세스가 실패했을 때 공통 규칙만 있는 성공으로 반환하지 않고, 출력 한도를 넘어도 규칙과 원문 순서를 보존하는 회귀를 추가했어요.
+- 실제 Termux Chromium으로 번개장터 검색·상품 상세, 숲나들e 로그인 화면, 전기차 보조금 현황을 확인했어요.
+
 ## 1.0.1
 
 - npm 캐시의 k-skill 진입점을 Node.js로 실행해 Android의 Unix shebang 경로 의존을 제거했어요.

@@ -14,7 +14,9 @@ Logent에 제공하는 동적 플러그인이에요. 원본 저장소를 포크�
 - Termux의 Node.js 22.20 이상과 npx가 필요해요. 없으면 Termux에서 `pkg install nodejs`로 설치해 주세요.
 - Logent의 `설정 → Termux → RUN_COMMAND 권한 요청`에서 허용해 주세요. 요청창이 뜨지 않으면 `Logent 권한 설정`으로 이동해요. Termux의 `allow-external-apps=true`와는 별개예요.
 - 카탈로그 조회는 Termux 없이 가능하지만 본문 읽기는 Termux 셸과 npm 패키지가 필요해요. 전역 `command -v k-skill` 결과는 플러그인의 준비 상태를 뜻하지 않아요.
-- 스킬 본문 읽기와 본문이 요구하는 외부 도구 실행은 별개예요. `bunjang-search`의 `bunjang-cli@0.2.1`은 Termux에서 Playwright의 `Unsupported platform: android`로 종료돼요. 본문을 읽었다고 검색에 성공한 것으로 표시하지 않아요.
+- 본문을 읽었다고 외부 도구 실행이나 검색이 성공한 것은 아니에요. 본문 앞에 붙는 Logent 실행 환경 규칙에 따라 모든 브라우저 단계는 정식 `browser_use` 도구로 실행해요.
+- `browser-use` 플러그인을 필수 의존성으로 선언해요. `browser-use`가 설치·활성 상태가 아니면 코어가 k-skill 기여를 적재하지 않고 설정에 이유를 표시해요. 두 플러그인과 그 의존성을 지원하는 Logent를 함께 설치해 주세요.
+- `bunjang-cli`·Playwright·브라우저 Python helper와 원격 Playwright 서비스는 직접 실행하지 않아요. HTTP 전용 조회와 파일 후처리는 유지하고, 로그인·본인인증·CAPTCHA·전자서명·결제 같은 경계는 자동 우회하지 않아요.
 
 ## 카탈로그 갱신
 

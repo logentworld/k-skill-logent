@@ -28,6 +28,10 @@ class KSkillPlugin : LogentPlugin {
 
     override fun skills(): List<PluginSkill> = remoteSkills
 
+    override fun promptSection(): String =
+        "k-skill은 browser-use를 필수로 사용해요. 모든 스킬의 브라우저 작업은 정식 browser_use로 실행하고, " +
+            "skill read 본문의 Logent 실행 환경 규칙을 원문의 CLI-first·helper 필수 실행·완료 기준의 특정 실행기 요구보다 우선해요."
+
     private suspend fun readRemote(name: String, context: PluginSkillReadContext): Result<String> {
         if (context.path != null) {
             return Result.failure(IllegalArgumentException("k-skill은 번들 파일 경로를 지원하지 않아요: $name"))
@@ -49,7 +53,7 @@ class KSkillPlugin : LogentPlugin {
         if (body.isEmpty()) {
             return Result.failure(IllegalStateException("k-skill이 스킬 '$name'의 내용을 비워서 돌려줬어요."))
         }
-        return Result.success(bounded(body))
+        return Result.success(bounded(body, BROWSER_RULES))
     }
 
     private fun remoteCommand(name: String): String = buildString {
@@ -75,10 +79,14 @@ class KSkillPlugin : LogentPlugin {
         }
     }
 
-    private fun bounded(text: String): String {
-        if (text.length <= MAX_TEXT) return text
-        val marker = "\n\n…스킬 출력 한도에서 잘렸어요."
-        return text.take(MAX_TEXT - marker.length) + marker
+    private fun bounded(text: String, prefix: String = ""): String {
+        val available = MAX_TEXT - prefix.length
+        if (text.length <= available) return if (prefix.isEmpty()) text else prefix + text
+        return buildString(MAX_TEXT) {
+            append(prefix)
+            append(text, 0, available - TRUNCATED.length)
+            append(TRUNCATED)
+        }
     }
 
     private fun shellQuote(value: String): String = "'" + value.replace("'", "'\\''") + "'"
@@ -90,5 +98,25 @@ class KSkillPlugin : LogentPlugin {
         const val NPX_MISSING_EXIT = 69
         const val NODE_OLD_EXIT = 68
         const val NODE_MISSING_EXIT = 70
+        const val TRUNCATED = "\n\n…스킬 출력 한도에서 잘렸어요."
+        val BROWSER_RULES = """
+            # Logent 실행 환경 규칙
+
+            이 규칙은 k-skill의 모든 스킬에 적용하며 아래 원문의 브라우저 실행 지시보다 우선해요.
+            - 브라우저 작업은 필수 의존 플러그인 com.sleepysoong.logent.browser-use의 정식 browser_use 도구로 실행해요. 런타임·사용자 세션·탭은 browser-use 한 곳에서 관리해요.
+            - 원문의 URL·검색 조건·데이터 의미·출력·승인 경계는 유지하되 CLI-first·helper 필수 실행·완료 기준의 특정 실행기 요구는 이 규칙으로 대체해요. 실제로 얻지 않은 CLI export·전수 결과를 만들었다고 보고하지 않아요.
+            - 내부나 fallback에서 로컬·원격 브라우저를 쓰는 npx 명령·k-skill exec·Python helper·설치 점검 명령은 실행하지 않아요. 원격 Playwright 실행 서비스로 보내는 우회도 browser_use로 대체해요.
+            - Playwright·Puppeteer·Selenium launch, 별도 CDP 클라이언트, BrowserOS·Aside·CloakBrowser는 사용하지 않아요. Playwright 설치나 플랫폼 위장으로 우회하지 않아요.
+            - 공개 데이터의 직접 HTTP 조회·로컬 파일 처리처럼 브라우저와 무관한 원문 도구는 유지해요. CLI가 조회에도 브라우저를 요구하면 공식 웹 화면을 browser_use로 관찰해요.
+            - 먼저 browser-use의 공식 스킬·도구 지침을 읽어요. taskSpace로 작업 전용 공간을 만들고 task.page("p1")로 페이지를 얻어요. spaceId·page label을 출력해 다음 호출에서 같은 공간을 다시 열어요. 호출 사이에 JS 변수는 유지되지 않아요.
+            - goto 뒤 snapshot으로 관찰하고 최신 ref·의미 기반 locator로 조작해요. DOM 코드는 page.evaluate 안에서만 실행하고 결과는 console.log로 출력해요. 원문의 Playwright 전용 API를 ego-browser API로 가정하지 않아요.
+            - 파일·다운로드·내보내기는 현재 Logent 작업 디렉터리 아래 절대 경로를 써요. browser_use의 실행 디렉터리가 작업 디렉터리와 같다고 가정하지 않아요.
+            - 로그인·본인인증·CAPTCHA·전자서명은 사용자에게 넘겨요. 결제·예약·메시지 전송·취소·최종 제출은 정확한 대상과 효과에 대한 사용자 승인 없이 실행하지 않아요. 원문의 더 엄격한 중지·승인 규칙은 유지해요.
+            - browser_use가 없거나 준비·연결에 실패하면 그대로 알리고 GUI 시작·복구가 필요한지 확인해요. 다른 실행기로 자동 전환하거나 검색·처리가 성공했다고 표시하지 않아요.
+            - 사용자 탭·다른 작업 공간·프로필을 임의로 선택하거나 닫지 않아요. 성공한 작업만 task.finish({keep: []})로 정리하고 사용자 제어·오류로 중단됐을 때는 finish하지 않아요.
+
+            ## 원본 스킬 지침
+
+        """.trimIndent() + "\n\n"
     }
 }

@@ -18,6 +18,7 @@ import zipfile
 
 
 MAX_FILES = 4096
+MAX_DEPENDENCIES = 32
 MAX_MANIFEST = 1024 * 1024
 MAX_FILE = 256 * 1024 * 1024
 MAX_TOTAL = 512 * 1024 * 1024
@@ -29,7 +30,7 @@ MAX_ZIP = 512 * 1024 * 1024
 MAX_PATH = 1024
 CHUNK = 1024 * 1024
 D8_TIMEOUT = 600
-ID_PATTERN = re.compile(r"[a-z][a-z0-9.-]{0,127}\Z", re.ASCII)
+ID_PATTERN = re.compile(r"[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)*\Z", re.ASCII)
 VERSION_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,95}\Z", re.ASCII)
 ENTRY_PATTERN = re.compile(
     r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+\Z", re.ASCII
@@ -131,11 +132,23 @@ def forbidden_asset(path):
 
 
 def validate_plugin_id(value):
-    if not ID_PATTERN.fullmatch(value) or any(not part for part in value.split(".")):
+    if len(value) > 128 or not ID_PATTERN.fullmatch(value) or any(not part for part in value.split(".")):
         raise PackError(
-            "id는 [a-z][a-z0-9.-]{0,127} 형식이며 점 사이에 빈 구간이 없어야 해요."
+            "id는 [a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)* 형식이며 점 사이에 빈 구간이 없어야 해요."
         )
     return value.rsplit(".", 1)[-1]
+
+
+def validate_dependencies(plugin_id, dependencies):
+    if len(dependencies) > MAX_DEPENDENCIES:
+        raise PackError("필수 플러그인은 최대 32개까지 지정할 수 있어요.")
+    for dependency in dependencies:
+        validate_plugin_id(dependency)
+        if dependency == plugin_id:
+            raise PackError("플러그인은 자신을 필수 플러그인으로 지정할 수 없어요.")
+    if len(set(dependencies)) != len(dependencies):
+        raise PackError("필수 플러그인 ID가 중복됐어요.")
+    return sorted(dependencies)
 
 
 def validate_name(value):
@@ -524,6 +537,7 @@ def render_manifest(arguments, files):
         f"apiMax={arguments.api_max}\n",
         f"entry={arguments.entry}\n",
     ]
+    lines.extend(f"requires={dependency}\n" for dependency in arguments.requires)
     for path in sorted(files):
         entry = files[path]
         lines.append(f"{entry.sha256}\t{entry.size}\t{path}\n")
@@ -601,7 +615,7 @@ def parse_manifest(data):
     except UnicodeDecodeError as error:
         raise PackError("manifest는 UTF-8이어야 해요.") from error
     lines = text[:-1].split("\n")
-    if not 7 <= len(lines) <= MAX_FILES + 6:
+    if not 8 <= len(lines) <= MAX_FILES + MAX_DEPENDENCIES + 7:
         raise PackError("manifest 줄 수가 허용 범위를 벗어났어요.")
     if lines[0] != "logent-plugin-v1":
         raise PackError("manifest 첫 줄은 logent-plugin-v1이어야 해요.")
@@ -623,10 +637,19 @@ def parse_manifest(data):
         raise PackError("manifest API 범위가 정수가 아니에요.") from error
     validate_api_range(api_min, api_max)
     validate_entry(field(6, "entry"))
+    file_start = 7
+    dependencies = []
+    while file_start < len(lines) and lines[file_start].startswith("requires="):
+        dependencies.append(lines[file_start][len("requires="):])
+        file_start += 1
+    if dependencies != validate_dependencies(plugin_id, dependencies):
+        raise PackError("manifest 필수 플러그인 행은 ID순으로 정렬해야 해요.")
+    if not 1 <= len(lines) - file_start <= MAX_FILES:
+        raise PackError("manifest 파일 수가 허용 범위를 벗어났어요.")
     prefix = f"assets/plugins/{short}/"
     files = []
     paths = []
-    for line in lines[7:]:
+    for line in lines[file_start:]:
         parts = line.split("\t")
         if len(parts) != 3 or not SHA_PATTERN.fullmatch(parts[0]):
             raise PackError("manifest 파일 행이 올바르지 않아요.")
@@ -727,6 +750,7 @@ def verify_package(path, public, workspace):
 
 def build(arguments):
     short = validate_plugin_id(arguments.id)
+    arguments.requires = validate_dependencies(arguments.id, arguments.requires)
     arguments.name = validate_name(arguments.name)
     arguments.version = validate_version(arguments.version)
     arguments.entry = validate_entry(arguments.entry)
@@ -818,6 +842,7 @@ def parser():
     package.add_argument("--name", required=True, help="표시 이름을 지정해 주세요.")
     package.add_argument("--version", required=True, help="플러그인 버전을 지정해 주세요.")
     package.add_argument("--entry", required=True, help="LogentPlugin 구현 클래스 이름을 지정해 주세요.")
+    package.add_argument("--requires", action="append", default=[], help="필수 플러그인 전체 ID를 지정해 주세요. 최대 32개까지 반복할 수 있어요.")
     package.add_argument("--key", required=True, help="Git checkout 밖의 PEM 개인키를 지정해 주세요.")
     package.add_argument("--public-key", required=True, help="개인키와 일치해야 하는 DER SPKI 공개키를 지정해 주세요.")
     package.add_argument("--output", required=True, help="완성된 .lpg 출력 경로를 지정해 주세요. 실패하면 기존 파일을 보존해요.")
