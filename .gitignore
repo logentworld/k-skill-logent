@@ -23,3 +23,8 @@ infra/eatpl-relay/.env.*
 .gstack/
 k-skills-list.html
 k-skills-list.pdf
+
+# Logent plugin
+.gradle/
+build/
+local.properties

@@ -1,0 +1,16 @@
+# k-skill Logent 플러그인 변경 고지
+
+## 원본
+
+- 저장소: https://github.com/NomaDamas/k-skill
+- 포함 자산: 각 스킬 디렉터리의 `SKILL.md`·`skill.json` 등 원본 트리
+- 라이선스: MIT (`LICENSE`, Copyright (c) 2026)
+- 원본 README: `README.upstream.md`
+
+## Logent 변경
+
+- `logent` 브랜치에서만 Android library 플러그인과 패키징 스크립트를 추가했어요.
+- upstream `*/skill.json`을 읽어 `catalog.json`과 `KSkillCatalog.kt`를 생성하고, 테스트가
+  생성 결과와 upstream 메타데이터가 같은지 확인해요. 원본 스킬 본문은 복사하지 않고 npx로 읽어요.
+- 플러그인 ID는 `com.sleepysoong.logent.k-skill`이며, 노출하는 스킬은 upstream 카탈로그와 같아요.
+- 플러그인 코드는 GPL-3.0이고 upstream 스킬 자산은 MIT 라이선스를 그대로 따라요.
