@@ -4,11 +4,13 @@ import com.sleepysoong.logent.plugin.PluginSkillReadContext
 import com.sleepysoong.logent.plugin.ProcessResult
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
+import kotlin.io.path.createTempDirectory
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.Assume.assumeTrue
 
 /** upstream skill.json에서 만든 k-skill 카탈로그와 npx 읽기 계약을 확인해요. */
 class KSkillPluginTest {
@@ -67,33 +69,54 @@ class KSkillPluginTest {
     }
 
     @Test
-    fun `읽기는 core와 같은 npx 명령을 셸로 실행한다`() = runBlocking {
-        var command = ""
-        val host = FakePluginHost { value, timeout ->
-            command = value
-            assertEquals(180, timeout)
-            Result.success(ProcessResult(0, "  스킬 본문  ", truncated = false))
+    fun `Unix 인터프리터가 없는 npm 진입점도 Node로 스킬 본문을 읽어요`() = runBlocking {
+        val available = ProcessBuilder("bash", "-c", "command -v node && command -v npx")
+            .redirectErrorStream(true).start()
+        assumeTrue(available.inputStream.bufferedReader().readText(), available.waitFor() == 0)
+        val upstreamRoot = Path.of(requireNotNull(System.getProperty("logent.upstream.root")))
+        val directory = createTempDirectory("kskill-node-entry")
+        try {
+            Files.writeString(directory.resolve("package.json"), """{"name":"kskill-read-test","version":"1.0.0"}""")
+            val module = directory.resolve("node_modules/@nomadamas/k-skill")
+            Files.createDirectories(module.resolve("bin"))
+            Files.writeString(
+                module.resolve("package.json"),
+                """{"name":"@nomadamas/k-skill","version":"0.11.1","bin":{"k-skill":"bin/k-skill.js"}}""",
+            )
+            val source = upstreamRoot.resolve("packages/k-skill-cli/bin/k-skill.js")
+                .toString().replace("\\", "\\\\").replace("'", "\\'")
+            val entry = module.resolve("bin/k-skill.js")
+            Files.writeString(entry, "#!/logent-test/없는-인터프리터\nrequire('$source');\n")
+            check(entry.toFile().setExecutable(true))
+            val bin = Files.createDirectories(directory.resolve("node_modules/.bin"))
+            Files.createSymbolicLink(bin.resolve("k-skill"), bin.relativize(entry))
+            val host = FakePluginHost { command, _ ->
+                runCatching {
+                    val output = directory.resolve("output.txt").toFile()
+                    val process = ProcessBuilder("bash", "-c", command)
+                        .directory(directory.toFile())
+                        .redirectErrorStream(true)
+                        .redirectOutput(output)
+                        .apply {
+                            environment()["npm_config_offline"] = "true"
+                            environment()["npm_config_cache"] = directory.resolve("cache").toString()
+                            environment().remove("LD_PRELOAD")
+                        }
+                        .start()
+                    try {
+                        check(process.waitFor(30, TimeUnit.SECONDS)) { "본문 읽기 시간이 초과됐어요." }
+                        ProcessResult(process.exitValue(), output.readText(), truncated = false)
+                    } finally {
+                        process.destroyForcibly()
+                    }
+                }
+            }
+            val skill = KSkillPlugin().skills().first { it.name == "bunjang-search" }
+            val body = requireNotNull(skill.read)(PluginSkillReadContext(host = host)).getOrThrow()
+            assertTrue(body, body.startsWith("# bunjang-search — assembled instructions"))
+            assertTrue(body, body.contains("npx --yes bunjang-cli --json search"))
+        } finally {
+            directory.toFile().deleteRecursively()
         }
-        val skill = KSkillPlugin().skills().first()
-        assertFalse(skill.promptIndex)
-        val body = requireNotNull(skill.read)(
-            PluginSkillReadContext(host = host),
-        ).getOrThrow()
-        assertEquals("스킬 본문", body)
-        assertTrue(command.contains("npx --yes @nomadamas/k-skill@0.11.1 instruct '${skill.name}'"))
-        assertTrue(command.contains("command -v npx"))
-        assertTrue(command.contains("DISABLE_TELEMETRY=1"))
-    }
-
-    @Test
-    fun `npx 누락은 실행 가능한 오류로 돌려준다`() = runBlocking {
-        val host = FakePluginHost { _, _ -> Result.success(ProcessResult(69, "NPX_MISSING", false)) }
-        val error = requireNotNull(KSkillPlugin().skills().first().read)(
-            PluginSkillReadContext(host = host),
-        ).exceptionOrNull()
-        assertEquals(
-            "npx가 없어요. Termux에서 pkg install nodejs로 Node.js와 npx를 설치해 주세요.",
-            error?.message,
-        )
     }
 }

@@ -7,8 +7,8 @@ import com.sleepysoong.logent.plugin.PluginSkillReadContext
 /**
  * upstream k-skill 카탈로그의 스킬만 제공해요.
  *
- * 이름·설명은 upstream 각 스킬의 `skill.json`에서 생성해 DEX에 넣고, 본문은 core와 같은
- * `npx @nomadamas/k-skill instruct` 명령을 `PluginHost.shell`로 실행해 가져와요.
+ * 이름·설명은 upstream 각 스킬의 `skill.json`에서 생성해 DEX에 넣고, 본문은 npm의 고정 패키지
+ * 진입점을 Node.js로 읽어 가져와요. Android에 없는 Unix shebang 경로에 기대지 않아요.
  */
 class KSkillPlugin : LogentPlugin {
     override val id: String = "com.sleepysoong.logent.k-skill"
@@ -60,8 +60,9 @@ class KSkillPlugin : LogentPlugin {
         append("if(v[0]<22||(v[0]===22&&v[1]<20)) process.exit($NODE_OLD_EXIT)' || ")
         append("{ echo NODE_OLD; exit $NODE_OLD_EXIT; }\n")
         append("export DISABLE_TELEMETRY=1 DO_NOT_TRACK=1\n")
-        append("npx --yes @nomadamas/k-skill@$KSKILL_PACKAGE_VERSION instruct ")
-        append(shellQuote(name)).append('\n')
+        val invocation = "exec node \"\$(command -v k-skill)\" instruct ${shellQuote(name)}"
+        append("npx --yes --package=@nomadamas/k-skill@$KSKILL_PACKAGE_VERSION --call ")
+        append(shellQuote(invocation)).append('\n')
     }
 
     private fun shellFailure(name: String, result: com.sleepysoong.logent.plugin.ProcessResult): String = when (result.exitCode) {

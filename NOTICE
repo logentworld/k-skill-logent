@@ -14,3 +14,9 @@
   생성 결과와 upstream 메타데이터가 같은지 확인해요. 원본 스킬 본문은 복사하지 않고 npx로 읽어요.
 - 플러그인 ID는 `com.sleepysoong.logent.k-skill`이며, 노출하는 스킬은 upstream 카탈로그와 같아요.
 - 플러그인 코드는 GPL-3.0이고 upstream 스킬 자산은 MIT 라이선스를 그대로 따라요.
+
+## 1.0.1
+
+- npm 캐시의 k-skill 진입점을 Node.js로 실행해 Android의 Unix shebang 경로 의존을 제거했어요.
+- 전역 CLI 없이 잘못된 shebang을 가진 로컬 npm 진입점에서 공식 스킬 본문을 읽는 회귀 검증을 추가했어요.
+- 본문 읽기와 외부 CLI 실행을 구분하고 bunjang-cli의 Playwright Android 미지원 제한을 문서화했어요.
