@@ -30,7 +30,8 @@ class KSkillPlugin : LogentPlugin {
 
     override fun promptSection(): String =
         "k-skill은 browser-use와 computer-use를 필수로 사용해요. 브라우저 작업은 정식 browser_use로, " +
-            "픽셀·스크린샷 확인은 computer_use로 실행해요. skill read 본문의 Logent 실행 환경 규칙을 " +
+            "픽셀·스크린샷 확인은 computer_use로 실행해요. 원문의 Playwright CLI·Python helper는 " +
+            "proot-cdp로 이미 실행 중인 Chromium에 붙여 실행하고, skill read 본문의 Logent 실행 환경 규칙을 " +
             "원문의 CLI-first·helper 필수 실행·완료 기준의 특정 실행기 요구보다 우선해요."
 
     private suspend fun readRemote(name: String, context: PluginSkillReadContext): Result<String> {
@@ -104,18 +105,19 @@ class KSkillPlugin : LogentPlugin {
             # Logent 실행 환경 규칙
 
             이 규칙은 k-skill의 모든 스킬에 적용하며 아래 원문의 브라우저 실행 지시보다 우선해요.
-            - 브라우저 작업은 필수 의존 플러그인 browser-use의 정식 browser_use 도구로 실행해요. 런타임·사용자 세션·탭은 browser-use 한 곳에서 관리해요.
-            - 픽셀·스크린샷 확인은 필수 의존 플러그인 computer-use의 computer_use screenshot을 써요. DOM 관찰·탐색·입력은 browser_use로 유지하고, 외부 Playwright 촬영 helper나 별도 브라우저로 대체하지 않아요.
-            - 원문의 URL·검색 조건·데이터 의미·출력·승인 경계는 유지하되 CLI-first·helper 필수 실행·완료 기준의 특정 실행기 요구는 이 규칙으로 대체해요. 실제로 얻지 않은 CLI export·전수 결과를 만들었다고 보고하지 않아요.
-            - 내부나 fallback에서 로컬·원격 브라우저를 쓰는 npx 명령·k-skill exec·Python helper·설치 점검 명령은 실행하지 않아요. 원격 Playwright 실행 서비스로 보내는 우회도 browser_use로 대체해요.
-            - Playwright·Puppeteer·Selenium launch, 별도 CDP 클라이언트, BrowserOS·Aside·CloakBrowser는 사용하지 않아요. Playwright 설치나 플랫폼 위장으로 우회하지 않아요.
-            - 공개 데이터의 직접 HTTP 조회·로컬 파일 처리처럼 브라우저와 무관한 원문 도구는 유지해요. CLI가 조회에도 브라우저를 요구하면 공식 웹 화면을 browser_use로 관찰해요.
-            - 먼저 browser-use의 공식 스킬·도구 지침을 읽어요. taskSpace로 작업 전용 공간을 만들고 task.page("p1")로 페이지를 얻어요. spaceId·page label을 출력해 다음 호출에서 같은 공간을 다시 열어요. 호출 사이에 JS 변수는 유지되지 않아요.
+            - 브라우저 작업의 기본은 필수 의존 플러그인 browser-use의 browser_use 도구예요. 런타임·사용자 세션·탭은 browser-use 한 곳에서 관리해요.
+            - 픽셀·스크린샷 확인은 필수 의존 플러그인 computer-use의 computer_use screenshot을 써요.
+            - 원문 스킬이 Playwright 기반 CLI나 Python helper로 직접 브라우저를 띄우면 Termux에서는 playwright import가 android 플랫폼을 거부해 실패해요. 기기에 proot-cdp가 있으면 `proot-cdp npx --yes <cli> …` 또는 `proot-cdp python3 <script> …`로 실행해 이미 실행 중인 Chromium(CDP 9222)에 붙여요.
+            - proot-cdp는 분리된 컨텍스트만 만들고 사용자 탭·프로필을 닫지 않아요. 실행이 끝나면 생성한 페이지만 정리해요.
+            - proot-cdp가 없거나 CDP 연결에 실패하면 browser_use로 공식 웹 화면을 관찰하고, 그것도 안 되면 그대로 알려요.
+            - Playwright 브라우저 설치(playwright install), 플랫폼 위장, BrowserOS·Aside·CloakBrowser, 원격 Playwright 실행 서비스는 쓰지 않아요.
+            - 원문의 URL·검색 조건·데이터 의미·출력·승인 경계는 유지해요. CLI-first·helper 필수 실행·완료 기준의 특정 실행기 요구는 이 규칙으로 대체하고, 실제로 얻지 않은 결과를 만들었다고 보고하지 않아요.
+            - 공개 데이터의 직접 HTTP 조회·로컬 파일 처리는 그대로 써요. CLI가 조회에도 브라우저를 요구하면 proot-cdp를 먼저 쓰고, 없으면 browser_use로 관찰해요.
+            - browser_use를 쓸 때는 browser-use의 공식 스킬·도구 지침을 먼저 읽어요. taskSpace로 작업 공간을 만들고 task.page("p1")로 페이지를 얻어요. spaceId·page label을 출력해 다음 호출에서 같은 공간을 다시 열어요.
             - goto 뒤 snapshot으로 관찰하고 최신 ref·의미 기반 locator로 조작해요. DOM 코드는 page.evaluate 안에서만 실행하고 결과는 console.log로 출력해요. 원문의 Playwright 전용 API를 ego-browser API로 가정하지 않아요.
-            - 파일·다운로드·내보내기는 현재 Logent 작업 디렉터리 아래 절대 경로를 써요. browser_use의 실행 디렉터리가 작업 디렉터리와 같다고 가정하지 않아요.
-            - 로그인·본인인증·CAPTCHA·전자서명은 사용자에게 넘겨요. 결제·예약·메시지 전송·취소·최종 제출은 정확한 대상과 효과에 대한 사용자 승인 없이 실행하지 않아요. 원문의 더 엄격한 중지·승인 규칙은 유지해요.
-            - browser_use가 없거나 준비·연결에 실패하면 그대로 알리고 GUI 시작·복구가 필요한지 확인해요. 다른 실행기로 자동 전환하거나 검색·처리가 성공했다고 표시하지 않아요.
-            - 사용자 탭·다른 작업 공간·프로필을 임의로 선택하거나 닫지 않아요. 성공한 작업만 task.finish({keep: []})로 정리하고 사용자 제어·오류로 중단됐을 때는 finish하지 않아요.
+            - 파일·다운로드·내보내기는 현재 Logent 작업 디렉터리 아래 절대 경로를 써요.
+            - 로그인·본인인증·CAPTCHA·전자서명은 사용자에게 넘겨요. 결제·예약·메시지 전송·취소·최종 제출은 정확한 대상과 효과에 대한 사용자 승인 없이 실행하지 않아요.
+            - 사용자 탭·다른 작업 공간·프로필을 임의로 선택하거나 닫지 않아요. 성공한 작업만 task.finish({keep: []})로 정리해요.
 
             ## 원본 스킬 지침
 
