@@ -98,3 +98,9 @@ These rules are repo-specific and apply to everything under this directory.
 - workflow는 원본 직접 접근을 먼저 시도하고, rendered-page discovery fallback을 사용한다. 두 경로가 막히면 manual dispatch의 strict `source_file_id=FILE_<digits>` override로 bootstrap한다.
 - ZIP CRC, 필수 CSV header, 파일 크기, SHA-256 검증 후 immutable object를 먼저 올리고 `latest.json`을 마지막에 교체한다.
 - R2 Standard 무료 한도와 custom-domain 변경 시 함께 수정해야 할 경로는 `docs/store-longevity-r2-mirror.md`를 기준으로 한다.
+
+## 커밋 메시지
+
+- gitmoji를 쓰지 않고 첫 줄을 `type: 영어 요약`(Conventional Commits, 72자 이내, 소문자 시작)으로 써요. 제목에 한글을 쓰지 않아요.
+- 빈 줄 뒤 본문은 한국어 해요체(~해요/~했어요)로 쓰고, 원문의 사실을 빠뜨리지 않아요.
+- 릴리스는 변경 커밋 하나와 `chore(release): {VERSION}` 버전 커밋 하나로 나눠요.
