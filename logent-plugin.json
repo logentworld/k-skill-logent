@@ -3,10 +3,7 @@
   "key": "sleepysoong:k_skill",
   "name": "k-skill",
   "entry": "com.sleepysoong.logent.kskill.KSkillPlugin",
-  "dependencies": [
-    "sleepysoong:browser_use",
-    "sleepysoong:computer_use"
-  ],
+  "dependencies": [],
   "apiMin": 4,
   "apiMax": 4
 }

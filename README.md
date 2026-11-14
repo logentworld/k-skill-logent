@@ -16,8 +16,8 @@ Logent에 제공하는 동적 플러그인이에요. 원본 저장소를 포크�
 - Logent의 `설정 → Termux → RUN_COMMAND 권한 요청`에서 허용해 주세요. 요청창이 뜨지 않으면 `Logent 권한 설정`으로 이동해요. Termux의 `allow-external-apps=true`와는 별개예요.
 - 카탈로그 조회는 Termux 없이 가능하지만 본문 읽기는 Termux 셸과 npm 패키지가 필요해요. 전역 `command -v k-skill` 결과는 플러그인의 준비 상태를 뜻하지 않아요.
 - 본문을 읽었다고 외부 도구 실행이나 검색이 성공한 것은 아니에요. 본문 앞에 붙는 Logent 실행 환경 규칙에 따라 모든 브라우저 단계는 정식 `browser_use` 도구로 실행해요.
-- Logent 0.0.84 이상과 API 4를 사용해요. 공통 정의 파일 `logent-plugin.json`의 필수 참조는 `sleepysoong:browser_use`와 `sleepysoong:computer_use`이며 manifest의 `key`·`requires`로 전달해요. 키는 GitHub 계정·조직이나 Android ID에서 추론하지 않아요.
-- 필수 참조가 누락·비활성·충돌 상태이면 코어가 소비자인 k-skill 기여를 제외해요. 의존 플러그인 자동 설치나 실행기 준비는 하지 않으므로 두 플러그인을 직접 설치·활성화해 주세요.
+- Logent 0.0.84 이상과 API 4를 사용해요. `browser_use`·`computer_use`는 코어 내장 도구라 필수 플러그인 참조가 없어요. `key`는 manifest에만 기록되고 GitHub 계정·조직이나 Android ID에서 추론하지 않아요.
+- 브라우저·컴퓨터 도구는 코어가 직접 제공하므로 별도 플러그인을 설치하거나 활성화하지 않아요.
 - `bunjang-cli`·Playwright·브라우저 Python helper와 원격 Playwright 서비스는 직접 실행하지 않아요. HTTP 전용 조회와 파일 후처리는 유지하고, 로그인·본인인증·CAPTCHA·전자서명·결제 같은 경계는 자동 우회하지 않아요.
 
 ## 카탈로그 갱신
